@@ -10,13 +10,15 @@ import {
   Settings, 
   LogOut,
   BarChart3,
-  Scale
+  Scale,
+  Link2
 } from 'lucide-react';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Campanhas', href: '/campanhas', icon: Megaphone },
   { name: 'Relatórios', href: '/relatorios', icon: BarChart3 },
+  { name: 'Conectar Conta', href: '/conectar', icon: Link2 },
   { name: 'Configurações', href: '/configuracoes', icon: Settings },
 ];
 
