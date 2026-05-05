@@ -29,25 +29,26 @@ export async function POST() {
   try {
     const supabase = getServiceSupabase();
 
-    // 1. Buscar credenciais da tabela settings
-    const { data: settings, error: settingsError } = await supabase
-      .from('settings')
-      .select('meta_access_token, meta_ad_account_id')
+    // 1. Buscar credenciais da tabela ad_accounts para o usuário atual
+    const { data: adAccount, error: accountError } = await supabase
+      .from('ad_accounts')
+      .select('id, account_id, access_token')
+      .eq('is_active', true)
       .limit(1)
       .single();
 
-    if (settingsError || !settings) {
-      return NextResponse.json({ error: 'Configurações do Meta não encontradas no banco.' }, { status: 400 });
+    if (accountError || !adAccount) {
+      return NextResponse.json({ error: 'Nenhuma conta Meta conectada. Vá em "Conectar Conta" para vincular sua conta.' }, { status: 400 });
     }
 
-    const { meta_access_token, meta_ad_account_id } = settings;
+    const { id: ad_account_id, account_id: meta_ad_account_id, access_token } = adAccount;
 
-    if (!meta_access_token || !meta_ad_account_id) {
-      return NextResponse.json({ error: 'Token ou Ad Account ID ausentes nas configurações.' }, { status: 400 });
+    if (!access_token || !meta_ad_account_id) {
+      return NextResponse.json({ error: 'Token ou Ad Account ID ausentes.' }, { status: 400 });
     }
 
     const baseUrl = `https://graph.facebook.com/v19.0/${meta_ad_account_id}`;
-    const tokenParam = `&access_token=${meta_access_token}`;
+    const tokenParam = `&access_token=${access_token}`;
 
     // 2. Fetch Campanhas e Insights
     const campaignsUrl = `${baseUrl}/campaigns?fields=id,name,status,objective${tokenParam}`;
@@ -78,6 +79,7 @@ export async function POST() {
 
         return {
           id: c.id,
+          ad_account_id: ad_account_id,
           name: c.name,
           status: c.status,
           objective: c.objective || null,
@@ -195,6 +197,7 @@ export async function POST() {
         }
 
         return {
+          ad_account_id: ad_account_id,
           entity_type: 'campaign',
           entity_id: insight.campaign_id,
           date: insight.date_start,
@@ -205,10 +208,8 @@ export async function POST() {
         };
       });
       
-      // We upsert using the unique constraint (entity_type, entity_id, date)
-      // Supabase JS doesn't support multiple onConflict columns easily without specifying the constraint name,
-      // but 'metrics_history_entity_type_entity_id_date_key' is the default name.
-      const { error } = await supabase.from('metrics_history').upsert(historyToInsert, { onConflict: 'entity_type,entity_id,date' });
+      // We upsert using the unique constraint (ad_account_id, entity_type, entity_id, date)
+      const { error } = await supabase.from('metrics_history').upsert(historyToInsert, { onConflict: 'ad_account_id,entity_type,entity_id,date' });
       if (error) {
         console.warn('Erro salvando histórico diário (campaign):', error.message);
       }
@@ -225,6 +226,7 @@ export async function POST() {
           if (convAction) leads = parseInt(convAction.value);
         }
         return {
+          ad_account_id: ad_account_id,
           entity_type: 'adset',
           entity_id: insight.adset_id,
           date: insight.date_start,
@@ -234,7 +236,7 @@ export async function POST() {
           leads: leads,
         };
       });
-      await supabase.from('metrics_history').upsert(historyToInsert, { onConflict: 'entity_type,entity_id,date' });
+      await supabase.from('metrics_history').upsert(historyToInsert, { onConflict: 'ad_account_id,entity_type,entity_id,date' });
     }
 
     // 7. Fetch Daily Historical Data for Ads
@@ -248,6 +250,7 @@ export async function POST() {
           if (convAction) leads = parseInt(convAction.value);
         }
         return {
+          ad_account_id: ad_account_id,
           entity_type: 'ad',
           entity_id: insight.ad_id,
           date: insight.date_start,
@@ -257,7 +260,7 @@ export async function POST() {
           leads: leads,
         };
       });
-      await supabase.from('metrics_history').upsert(historyToInsert, { onConflict: 'entity_type,entity_id,date' });
+      await supabase.from('metrics_history').upsert(historyToInsert, { onConflict: 'ad_account_id,entity_type,entity_id,date' });
     }
 
     return NextResponse.json({ 
