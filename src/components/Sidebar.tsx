@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase-browser';
 import { 
   LayoutDashboard, 
   Megaphone, 
-  Settings, 
   LogOut,
   BarChart3,
   Scale,
@@ -19,7 +18,6 @@ const navItems = [
   { name: 'Campanhas', href: '/campanhas', icon: Megaphone },
   { name: 'Relatórios', href: '/relatorios', icon: BarChart3 },
   { name: 'Conectar Conta', href: '/conectar', icon: Link2 },
-  { name: 'Configurações', href: '/configuracoes', icon: Settings },
 ];
 
 export default function Sidebar() {
