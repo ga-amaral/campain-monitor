@@ -1,9 +1,21 @@
 'use client';
 
-import { Bell, Search, User } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, Search, User, LogOut } from 'lucide-react';
 import SyncButton from '@/components/SyncButton';
+import { createClient } from '@/lib/supabase-browser';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
+  const [showMenu, setShowMenu] = useState(false);
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-950/50 backdrop-blur-md sticky top-0 z-30 px-8 flex items-center justify-between">
       
@@ -28,9 +40,26 @@ export default function Header() {
           <span className="absolute top-1.5 right-2 w-2 h-2 bg-blue-500 rounded-full border-2 border-slate-950"></span>
         </button>
 
-        <button className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 hover:border-slate-600 transition-colors">
-          <User className="w-4 h-4 text-slate-300" />
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => setShowMenu(!showMenu)}
+            className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 hover:border-slate-600 transition-colors"
+          >
+            <User className="w-4 h-4 text-slate-300" />
+          </button>
+
+          {showMenu && (
+            <div className="absolute right-0 mt-2 w-40 bg-slate-900 border border-slate-700 rounded-lg shadow-lg overflow-hidden">
+              <button
+                onClick={handleLogout}
+                className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Sair
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
