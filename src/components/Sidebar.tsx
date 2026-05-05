@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase-browser';
 import { 
   LayoutDashboard, 
   Megaphone, 
@@ -21,10 +22,12 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
 
   const handleLogout = async () => {
-    await fetch('/api/auth', { method: 'DELETE' });
-    window.location.href = '/login';
+    await supabase.auth.signOut();
+    router.push('/login');
   };
 
   return (
